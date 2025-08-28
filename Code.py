@@ -31,6 +31,11 @@ variabel_status = {
 }
 
 
+
+#Global variable to record if in 1 of the iteration found CONTRADITION (only cosmetic purpose)
+CONTRADICTION_FOUND = False
+
+
 # --- 3. Assistive Functions for Qualitative Operations ---
 #DETERMINING MULTIPLICATION AND DIVISION FOR QUALITATIVE VARIABLES
 def determine_product_status(status1, status2):
@@ -101,6 +106,7 @@ def propagate_pi_a1(variables):
     Logika untuk Pi_A1 = (Q * rho^1/2) / (A_open * Pin^3/2)
     Asumsi: Pi_A1 dan rho adalah KONSTAN.
     """
+    global CONTRADICTION_FOUND
     changes_made = False
 
     # NUMERATOR
@@ -125,6 +131,7 @@ def propagate_pi_a1(variables):
         else:
             #If initial Pi_A1 different than new Pi_A1
             if variables['Pi_A1'] != new_pi_a1_status:
+                CONTRADICTION_FOUND = True
                 print(f"CONTRADICTION FOUND ON PI_A1: User defined PI_A1 IS '{variables['Pi_A1']}'. It is CONTRADICTED the calculation result '{new_pi_a1_status}'.")
                 # In a more complete implementation, note this contradiction (FUTURE ENHANCEMENT)
                 return False # Stop propagation
@@ -136,14 +143,15 @@ def propagate_pi_a1(variables):
         if denominator_status != 'U' and numerator_status == 'U':
             variables['Q'] = denominator_status
             changes_made = True
-        elif numerator_status != 'U' and denominator_status == 'U':
-            # This is the uncertain part. We can conclude that, the product of A_open and Pin must equal the state of Q.
-            # However, we can't conclude which of the two has changed.
-            # We'll let the main loop infer this from another function.
-            pass
-            #variables['A_open'] = numerator_status # Assumption only AOpen change
-            #variables['P_in'] = 'C' # Pin is constant, or this will change into U
-            #changes_made = True
+        
+        elif denominator_status != 'U' and numerator_status == 'U':
+            if variables['Q'] == 'U':
+                variables['Q'] = denominator_status
+                changes_made = True
+            elif variables['Q'] != denominator_status:
+                CONTRADICTION_FOUND = True
+                print(f"CONTRADICTION FOUND: Q is '{variables['Q']}', but propagation says '{denominator_status}'.")
+                return False
             
     return changes_made
 
@@ -152,6 +160,7 @@ def propagate_pi_a2(variables):
     """
     Pi_A2 = P_out / P_in.
     """
+    global CONTRADICTION_FOUND
     changes_made = False
     
     # Determine Pi_A2 status from Pout and Pin
@@ -164,23 +173,33 @@ def propagate_pi_a2(variables):
             changes_made = True
         # If PI_A2 is not UNKNOWN, then CONTRADICTION
         elif variables['Pi_A2'] != new_pi_a2_status:
+            CONTRADICTION_FOUND = True
             print(f"CONTRADICTION FOUND IN PI_A2: Initial status '{variables['Pi_A2']}' contradicted with current calculation '{new_pi_a2_status}'.")
             return False # Hentikan propagasi
 
     # Determine POut or Pin
-    if variables['Pi_A2'] != 'U' and variables['P_out'] != 'U' and variables['P_in'] == 'U':
-        # P_in = P_out / Pi_A2
+    if variables['Pi_A2'] != 'U' and variables['P_out'] != 'U':
         new_pin_status = determine_division_status(variables['P_out'], variables['Pi_A2'])
         if new_pin_status != 'U':
-            variables['P_in'] = new_pin_status
-            changes_made = True
-            
-    elif variables['Pi_A2'] != 'U' and variables['P_in'] != 'U' and variables['P_out'] == 'U':
-        # P_out = Pi_A2 * P_in
+            if variables['P_in'] == 'U':
+                variables['P_in'] = new_pin_status
+                changes_made = True
+            elif variables['P_in'] != new_pin_status:
+                CONTRADICTION_FOUND = True
+                print(f"CONTRADICTION FOUND: P_in is '{variables['P_in']}', but propagation says '{new_pin_status}'.")
+                return False
+
+    elif variables['Pi_A2'] != 'U' and variables['P_in'] != 'U':
         new_pout_status = determine_product_status(variables['Pi_A2'], variables['P_in'])
         if new_pout_status != 'U':
-            variables['P_out'] = new_pout_status
-            changes_made = True
+            if variables['P_out'] == 'U':
+                variables['P_out'] = new_pout_status
+                changes_made = True
+            elif variables['P_out'] != new_pout_status:
+                CONTRADICTION_FOUND = True
+                print(f"CONTRADICTION FOUND: P_out is '{variables['P_out']}', but propagation says '{new_pout_status}'.")
+                return False
+
             
     return changes_made
 
@@ -190,6 +209,7 @@ def propagate_pi_b1(variables):
     Pi_B1 = (x * P) / K
     Assumption: K is CONSTANT.
     """
+    global CONTRADICTION_FOUND
     changes_made = False
 
     # Determine Pi_B1
@@ -203,27 +223,33 @@ def propagate_pi_b1(variables):
             variables['Pi_B1'] = new_pi_b1_status
             changes_made = True
         elif variables['Pi_B1'] != new_pi_b1_status:
+            CONTRADICTION_FOUND = True
             print(f"CONTRADICTION FOUND IN PI_B1: The initial state of '{variables['Pi_B1']}' contradicts the calculated result of '{new_pi_b1_status}'.")
             return False
 
-    # Return propagation (Check x or P)
-    # Only if Pi_B1 is not UNKNOWN
     if variables['Pi_B1'] != 'U':
-        # If x UNKNOWN, get status from Pi_B1 and P
-        # x = (Pi_B1 * K) / P -> x = Pi_B1 / P
         if variables['x'] == 'U' and variables['P'] != 'U':
             new_x_status = determine_division_status(variables['Pi_B1'], variables['P'])
             if new_x_status != 'U':
-                variables['x'] = new_x_status
-                changes_made = True
-                
-        # If P UNKNOWN, get status from Pi_B1 and x
-        # P = (Pi_B1 * K) / x -> P = Pi_B1 / x
+                if variables['x'] == 'U':
+                    variables['x'] = new_x_status
+                    changes_made = True
+                elif variables['x'] != new_x_status:
+                    CONTRADICTION_FOUND = True
+                    print(f"CONTRADICTION FOUND: x is '{variables['x']}', but propagation says '{new_x_status}'.")
+                    return False
+
         elif variables['P'] == 'U' and variables['x'] != 'U':
             new_p_status = determine_division_status(variables['Pi_B1'], variables['x'])
             if new_p_status != 'U':
-                variables['P'] = new_p_status
-                changes_made = True
+                if variables['P'] == 'U':
+                    variables['P'] = new_p_status
+                    changes_made = True
+                elif variables['P'] != new_p_status:
+                    CONTRADICTION_FOUND = True
+                    print(f"CONTRADICTION FOUND: P is '{variables['P']}', but propagation says '{new_p_status}'.")
+                    return False
+
 
     return changes_made
 
@@ -232,6 +258,7 @@ def propagate_pi_c1(variables):
     """
     Pi_C1 = P / Pout.
     """
+    global CONTRADICTION_FOUND
     changes_made = False
 
     # Determine Pi_C1
@@ -242,26 +269,32 @@ def propagate_pi_c1(variables):
             variables['Pi_C1'] = new_pi_c1_status
             changes_made = True
         elif variables['Pi_C1'] != new_pi_c1_status:
+            CONTRADICTION_FOUND = True
             print(f"CONTRADICTION FOUND IN PI_C1: The initial state of '{variables['Pi_C1']}' contradicts the calculated result of '{new_pi_c1_status}'.")
             return False
 
-    # return propagation to determine Pout or P
-    if variables['Pi_C1'] != 'U': #If not passed before, will always enter here, because the variables Pi_C1 already get from new Pi_C1
-        # If Pout unknown
-        # P_out = P / Pi_C1
+    if variables['Pi_C1'] != 'U':
         if variables['P_out'] == 'U' and variables['P'] != 'U':
             new_pout_status = determine_division_status(variables['P'], variables['Pi_C1'])
             if new_pout_status != 'U':
-                variables['P_out'] = new_pout_status
-                changes_made = True
+                if variables['P_out'] == 'U':
+                    variables['P_out'] = new_pout_status
+                    changes_made = True
+                elif variables['P_out'] != new_pout_status:
+                    CONTRADICTION_FOUND = True
+                    print(f"CONTRADICTION FOUND: P_out is '{variables['P_out']}', but propagation says '{new_pout_status}'.")
+                    return False
 
-        # If P Unknown
-        # P = Pi_C1 * Pout
         elif variables['P'] == 'U' and variables['P_out'] != 'U':
             new_p_status = determine_product_status(variables['Pi_C1'], variables['P_out'])
             if new_p_status != 'U':
-                variables['P'] = new_p_status
-                changes_made = True
+                if variables['P'] == 'U':
+                    variables['P'] = new_p_status
+                    changes_made = True
+                elif variables['P'] != new_p_status:
+                    CONTRADICTION_FOUND = True
+                    print(f"CONTRADICTION FOUND: P is '{variables['P']}', but propagation says '{new_p_status}'.")
+                    return False
 
     return changes_made
 
@@ -270,6 +303,7 @@ def propagate_pi_c2(variables):
     """
     Pi_C2 = x / A_open.
     """
+    global CONTRADICTION_FOUND
     changes_made = False
 
     # Determine Pi_C2
@@ -280,26 +314,34 @@ def propagate_pi_c2(variables):
             variables['Pi_C2'] = new_pi_c2_status
             changes_made = True
         elif variables['Pi_C2'] != new_pi_c2_status:
+            CONTRADICTION_FOUND = True
             print(f"CONTRADICTION FOUND IN PI_C2: The initial state of '{variables['Pi_C2']}' contradicts the calculated result of '{new_pi_c2_status}'.")
             return False
 
     # return propagation to determine AOpen or x
     if variables['Pi_C2'] != 'U':
-        # if AOpen unknown
-        # A_open = x / Pi_C2
         if variables['A_open'] == 'U' and variables['x'] != 'U':
             new_a_open_status = determine_division_status(variables['x'], variables['Pi_C2'])
             if new_a_open_status != 'U':
-                variables['A_open'] = new_a_open_status
-                changes_made = True
+                if variables['A_open'] == 'U':
+                    variables['A_open'] = new_a_open_status
+                    changes_made = True
+                elif variables['A_open'] != new_a_open_status:
+                    CONTRADICTION_FOUND = True
+                    print(f"CONTRADICTION FOUND: A_open is '{variables['A_open']}', but propagation says '{new_a_open_status}'.")
+                    return False
 
-        # if x unknown
-        # x = Pi_C2 * A_open
         elif variables['x'] == 'U' and variables['A_open'] != 'U':
             new_x_status = determine_product_status(variables['Pi_C2'], variables['A_open'])
             if new_x_status != 'U':
-                variables['x'] = new_x_status
-                changes_made = True
+                if variables['x'] == 'U':
+                    variables['x'] = new_x_status
+                    changes_made = True
+                elif variables['x'] != new_x_status:
+                    CONTRADICTION_FOUND = True
+                    print(f"CONTRADICTION FOUND: x is '{variables['x']}', but propagation says '{new_x_status}'.")
+                    return False
+
 
     return changes_made
 
@@ -354,10 +396,12 @@ def merge_contact_variable_pi_c1_pi_c2 (variables):
 
 # --- 5. Main part of algorithm. Propagate all rules ---
 def solve_pressure_regulator(initial_variables):
+    global CONTRADICTION_FOUND
+    CONTRADICTION_FOUND = False
+
     variables = initial_variables.copy()
     changes_made = True
     iteration = 0
-    #contradiction_found = False
 
     print("--- INITIAL STATUS ---")
     print(variables)
@@ -367,23 +411,11 @@ def solve_pressure_regulator(initial_variables):
         changes_made = False
         iteration += 1
         print(f"Iteration {iteration}:")
-        contradiction_found = False
 
-        # Call propagation builder
-        propagate_A = propagate_ensemble_a(variables)
-        changes_made = propagate_A or changes_made
-        if (propagate_A == False):
-            contradiction_found = True
-
-        Contact_Var = merge_contact_variable_pi_c1_pi_c2(variables)
-        changes_made = Contact_Var or changes_made
-        if (Contact_Var == False):
-            contradiction_found = True
-
-        propagate_B = propagate_ensemble_b(variables) 
-        changes_made = propagate_B or changes_made
-        if (propagate_B == False):
-            contradiction_found = True
+        # Call propagation iteration
+        changes_made = propagate_ensemble_a(variables) or changes_made
+        changes_made = merge_contact_variable_pi_c1_pi_c2(variables) or changes_made
+        changes_made = propagate_ensemble_b(variables) or changes_made
         
         print(variables)
 
@@ -394,7 +426,14 @@ def solve_pressure_regulator(initial_variables):
     # It continues running other propagations until the system reaches stability,
     # then exits the loop. 
     # Finally, the contradiction flag is checked here.
-    if contradiction_found:
+    # Future Enhancement :
+    # 1. Able to log which iteration make which contradition
+    # 2. Now we mostly only cover the contradiction on Pi-* variables, 
+    # other variables only covered when it is so clear like INCREASE against DECREASE in some variable.
+    # if variable changes due to propagation and contradict, only Pi-variables are showing the warning
+    # Introduce enhanced propagation rules so the system can check contradictions not only on Pi-* variables, 
+    # but also on the core physical variables (e.g.Pin,Pout,Q,Aopen,x, P). 
+    if CONTRADICTION_FOUND:
         print(">>> CONTRADICTION FOUND <<<")
     else:
         print(">>> NO CONTRADICTION FOUND <<<")
