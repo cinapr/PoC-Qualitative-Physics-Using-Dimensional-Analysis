@@ -49,10 +49,15 @@ def determine_product_status(status1, status2):
         return status2
     elif status2 == CONSTANT:
         return status1
-    # If both are the same (I or D), the product is INCREASE.
-    # Note: I * I = I, D * D = I
-    elif status1 == status2:
+    # If both are the same INCREASE, then INCREASE
+    elif ((status1 == INCREASE) and (status2 == INCREASE) ):
         return INCREASE
+    # If both are the same DECREASE, then DECREASE
+    # In this prototype, we always assume both variables are positive. so it is DECREASE.
+    # in quantitative calculation, when both DECREASE and the number below 0, it will turn into positive
+    # Example: initially A=3, then minus 5. initially B=2, then minus 7. THen the result will be increase instead because (3-5)x(2-7) = (-2)x(-5) = 10
+    elif ((status1 == DECREASE) and (status2 == DECREASE) ):
+        return DECREASE
     #If contradicting status given, then we can't get the fix result without the quantitative number (To determine it is increase or decrease)
     elif (status1 == INCREASE and status2 == DECREASE) or (status1 == DECREASE and status2 == INCREASE):
         return UNKNOWN
@@ -298,29 +303,7 @@ def propagate_pi_c2(variables):
 
     return changes_made
 
-# 7. To make the code more creative
 
-# 7.1 Propagation of the physical link between the plunger position (x) and the valve opening area (A_open).
-# A direct positive relationship is assumed: as x increases, A_open increases.
-def propagate_physical_link(variables):
-    changes_made = False
-    
-    # If x is known and A_open is unknown, deduce A_open from x
-    if variables['x'] != UNKNOWN and variables['A_open'] == UNKNOWN:
-        variables['A_open'] = variables['x']
-        changes_made = True
-    
-    # If A_open is known and x is unknown, deduce x from A_open
-    elif variables['A_open'] != UNKNOWN and variables['x'] == UNKNOWN:
-        variables['x'] = variables['A_open']
-        changes_made = True
-        
-    # Check for contradiction if both are known but do not match
-    elif variables['x'] != UNKNOWN and variables['A_open'] != UNKNOWN and variables['x'] != variables['A_open']:
-        print(f"CONTRADICTION FOUND IN PHYSICAL LINK: Plunger position (x) '{variables['x']}' contradicts valve opening area (A_open) '{variables['A_open']}'.")
-        return False
-        
-    return changes_made
 
 
 
@@ -332,8 +315,10 @@ def propagate_ensemble_a(variables):
     #Ensemble Pi_A1 and Pi_A2 into ensemble_A
     """
     changes_made = False
-    if propagate_pi_a1(variables): changes_made = True
-    if propagate_pi_a2(variables): changes_made = True
+    if propagate_pi_a1(variables): 
+        changes_made = True
+    if propagate_pi_a2(variables): 
+        changes_made = True
     return changes_made
 
 
@@ -372,6 +357,7 @@ def solve_pressure_regulator(initial_variables):
     variables = initial_variables.copy()
     changes_made = True
     iteration = 0
+    #contradiction_found = False
 
     print("--- INITIAL STATUS ---")
     print(variables)
@@ -381,17 +367,41 @@ def solve_pressure_regulator(initial_variables):
         changes_made = False
         iteration += 1
         print(f"Iteration {iteration}:")
+        contradiction_found = False
 
         # Call propagation builder
-        changes_made = propagate_ensemble_a(variables) or changes_made
-        changes_made = merge_contact_variable_pi_c1_pi_c2(variables) or changes_made
-        changes_made = propagate_ensemble_b(variables) or changes_made
-        changes_made = propagate_physical_link(variables) or changes_made 
+        propagate_A = propagate_ensemble_a(variables)
+        changes_made = propagate_A or changes_made
+        if (propagate_A == False):
+            contradiction_found = True
+
+        Contact_Var = merge_contact_variable_pi_c1_pi_c2(variables)
+        changes_made = Contact_Var or changes_made
+        if (Contact_Var == False):
+            contradiction_found = True
+
+        propagate_B = propagate_ensemble_b(variables) 
+        changes_made = propagate_B or changes_made
+        if (propagate_B == False):
+            contradiction_found = True
         
         print(variables)
 
     print("\n--- END STATUS ---")
+
+    # If a contradiction is found in the middle of iterations, the algorithm will not stop immediately.
+    # It will just get a flag, that at least one of the variables face CONTRADICTION
+    # It continues running other propagations until the system reaches stability,
+    # then exits the loop. 
+    # Finally, the contradiction flag is checked here.
+    if contradiction_found:
+        print(">>> CONTRADICTION FOUND <<<")
+    else:
+        print(">>> NO CONTRADICTION FOUND <<<")
+
+    print("Last Variables Stage:")
     print(variables)
+    
 
 # --- 6. Example ---
 # Main function to run the simulation with user-selectable options.
