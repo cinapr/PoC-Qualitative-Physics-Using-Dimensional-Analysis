@@ -155,11 +155,11 @@ def propagate_pi_a2(variables):
     new_pi_a2_status = determine_division_status(variables['P_out'], variables['P_in'])
     
     if new_pi_a2_status != 'U':
-        # Jika status Pi_A2 belum diketahui, perbarui
+        # If Pi_A2 UNKNOWN
         if variables['Pi_A2'] == 'U':
             variables['Pi_A2'] = new_pi_a2_status
             changes_made = True
-        # Jika status Pi_A2 sudah diketahui, cek kontradiksi
+        # If PI_A2 is not UNKNOWN, then CONTRADICTION
         elif variables['Pi_A2'] != new_pi_a2_status:
             print(f"CONTRADICTION FOUND IN PI_A2: Initial status '{variables['Pi_A2']}' contradicted with current calculation '{new_pi_a2_status}'.")
             return False # Hentikan propagasi
@@ -243,7 +243,7 @@ def propagate_pi_c1(variables):
             return False
 
     # return propagation to determine Pout or P
-    if variables['Pi_C1'] != 'U':
+    if variables['Pi_C1'] != 'U': #If not passed before, will always enter here, because the variables Pi_C1 already get from new Pi_C1
         # If Pout unknown
         # P_out = P / Pi_C1
         if variables['P_out'] == 'U' and variables['P'] != 'U':
@@ -384,10 +384,10 @@ def solve_pressure_regulator(initial_variables):
         iteration += 1
         print(f"Iteration {iteration}:")
 
-        # Panggil semua fungsi propagasi
+        # Call propagation builder
         changes_made = propagate_ensemble_a(variables) or changes_made
-        changes_made = propagate_ensemble_b(variables) or changes_made
         changes_made = merge_contact_variable_pi_c1_pi_c2(variables) or changes_made
+        changes_made = propagate_ensemble_b(variables) or changes_made
         changes_made = propagate_physical_link(variables) or changes_made 
         
         print(variables)
