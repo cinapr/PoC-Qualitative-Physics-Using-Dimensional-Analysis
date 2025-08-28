@@ -400,14 +400,13 @@ def solve_pressure_regulator(initial_variables):
 def main():
     print("Select the scenario you want to run:")
     print("1. Scenario 1: P_out constant, P_in increasing")
-    print("Explanation: The pressure regulator is functioning properly. P_in (inlet pressure) is increasing, but P_out (outlet pressure) remains constant because the regulator is adjusting.")
     print("2. Scenario 2: P_in constant, P_out decreasing")
-    print("Explanation: There is a leak or restriction in the system. P_in remains constant, but P_out decreases.")
     print("3. Scenario 3: P_in increasing, P_out increasing")
-    print("Explanation: The regulator is not functioning. The increase in P_in is passed on to P_out.")
-    print("4. Manual Input")
+    print("4. Scenario 4: P_in increasing, P_out is not determined")
+    print("5. Scenario 5: P_in constant, P_out increasing")
+    print("6. Manual Input")
 
-    choice = input("Make your choice (1/2/3/4): ")
+    choice = input("Make your choice (1/2/3/4/5/6): ")
     
     if choice == '1':
         initial_state = {
@@ -458,6 +457,38 @@ def main():
         solve_pressure_regulator(initial_state)
 
     elif choice == '4':
+        initial_state = {
+            'P_in': INCREASE,
+            'P_out': UNKNOWN,
+            'Q': CONSTANT,
+            'A_open': INCREASE,
+            'x': UNKNOWN,
+            'P': UNKNOWN,
+            'Pi_A1': UNKNOWN,
+            'Pi_A2': UNKNOWN,
+            'Pi_B1': UNKNOWN,
+            'Pi_C1': UNKNOWN,
+            'Pi_C2': UNKNOWN,
+        }
+        solve_pressure_regulator(initial_state)
+
+    elif choice == '5':
+        initial_state = {
+            'P_in': CONSTANT,
+            'P_out': INCREASE,
+            'Q': UNKNOWN,
+            'A_open': UNKNOWN,
+            'x': UNKNOWN,
+            'P': UNKNOWN,
+            'Pi_A1': UNKNOWN,
+            'Pi_A2': UNKNOWN,
+            'Pi_B1': UNKNOWN,
+            'Pi_C1': UNKNOWN,
+            'Pi_C2': UNKNOWN,
+        }
+        solve_pressure_regulator(initial_state)
+
+    elif choice == '6':
         status_mapping = {
             'I': INCREASE,
             'D': DECREASE,
