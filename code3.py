@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # This code implements qualitative reasoning logic
 # for a pressure regulator system, according to the given task.
 #
@@ -122,8 +121,7 @@ def propagate_pi_a1(variables):
             #If initial Pi_A1 different than new Pi_A1
             if variables['Pi_A1'] != new_pi_a1_status:
                 print(f"CONTRADICTION FOUND ON PI_A1: User defined PI_A1 IS '{variables['Pi_A1']}'. It is CONTRADICTED the calculation result '{new_pi_a1_status}'.")
-                # Dalam implementasi yang lebih lengkap, Anda akan mencatat kontradiksi ini
-                # dan menghentikan propagasi atau mencatatnya.
+                # In a more complete implementation, note this contradiction (FUTURE ENHANCEMENT)
                 return False # Stop propagation
             #else If: initial Pi_A1 same with new Pi_A1, you can just ignore it
     
