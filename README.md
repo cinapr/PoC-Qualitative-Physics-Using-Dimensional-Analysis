@@ -6,6 +6,21 @@ The project combines theoretical foundations (summarized in the included paper),
 
 ---
 
+## 🖼️ Pressure Regulator Model
+
+The system we emulate in Python is based on the following schematic of a **pressure regulator**, modeled as two coupled ensembles:
+
+- **Ensemble A (Pipe with Orifice)**: describes flow, inlet pressure, outlet pressure, and valve opening area.  
+- **Ensemble B (Spring Valve Assembly)**: describes displacement, internal pressure, and spring constant.  
+- **Coupling Regimes (Pivot Variables)**: connect Ensemble A and B through shared variables (P ↔ Pout, x ↔ Aopen).  
+
+This illustrates how **π-calculus reasoning** allows qualitative changes in one part of the system to propagate across ensembles.
+
+![Pressure Regulator](https://github.com/cinapr/PoC-Qualitative-Physics-Using-Dimensional-Analysis/blob/main/Pressure%20Regulator%20to%20be%20emulated%20in%20python.png)
+
+
+---
+
 ## 📂 Repository Structure
 
 - **Paper Summary** (`.docx`, `.pdf`)  
