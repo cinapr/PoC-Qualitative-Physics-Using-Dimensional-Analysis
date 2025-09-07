@@ -8,15 +8,6 @@ The project combines theoretical foundations (summarized in the included paper),
 
 ## 📂 Repository Structure
 
-- **Flowcharts/**  
-  Contains algorithm flowchart images for the pressure regulator model.
-
-- **Test-Questions/**  
-  Set of written test questions related to the research and reasoning framework.
-
-- **demo.mkv**  
-  Demonstration video showing how the program runs.
-
 - **Paper Summary** (`.docx`, `.pdf`)  
   A detailed summary of the research foundations:
   - Dimensional Analysis
@@ -36,6 +27,15 @@ The project combines theoretical foundations (summarized in the included paper),
     - `propagate_pi_c2` – coupling: valve displacement ↔ opening area  
   - Provides `solve_pressure_regulator` to iteratively propagate values until stable.
   - Reports contradictions when input states are inconsistent.
+
+- **Flowcharts/**  
+  Contains algorithm flowchart images for the pressure regulator model.
+
+- **Test-Questions/**  
+  Documents containing journal paper where this project based-on
+
+- **demo.mkv**  
+  Demonstration video showing how the program runs.
 
 ---
 
